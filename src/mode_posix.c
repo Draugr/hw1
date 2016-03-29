@@ -1,42 +1,32 @@
 #include "funct.h"
 
-int sent_signal_table[256][5];
-int received_signal_table[256][5];
-int received_signal_index = 0;
+int out_signals[256][5];
+int in_signals[256][5];
+int in_signal_num = 0;
 
-void sighandler_posix(int signum, siginfo_t *siginfo, void *data) {
+void posix_handle(int signum, siginfo_t *siginfo, void *data) {
 	int i;
 	
-	if ( signum == SIGCHLD )
-	{
-		// SIGCHLD received, print sent_signal_table
-
-		fprintf(stdout, "SIGCHLD received, processed signals that sent by child :\n");
-
-		// print sent signal table
-		for (i = 0; i < received_signal_index; i++)
+	if ( signum == SIGCHLD ){
+		for (i = 0; i < in_signal_num; i++)
 		{
-			int *row = received_signal_table[i];
-
-			fprintf(stdout, "%i | MYPID: %i | PARENTPID: %i | RECEIVEDSIGNAL: %i | VAL: %i\n", row[0], row[1], row[2], row[3], row[4]);
+			fprintf(stdout, "N=%i | MYPID=%i | PPID=%i | SIGNAL No=%i | VALUE=%i\n", in_signals[i][0], in_signals[i][1], in_signals[i][2], in_signals[i][3], in_signals[i][4]);
 		}
-
 	} else {
-
 		sigval_t sigval = siginfo->si_value;
 
-		int *row = received_signal_table[received_signal_index++];
-		row[0] = received_signal_index;
-		row[1] = getpid();
-		row[2] = getppid();
-		row[3] = signum;
-		row[4] = sigval.sival_int;
+		int it = in_signal_num++;
+		in_signals[it][0] = in_signal_num;
+		in_signals[it][1] = getpid();
+		in_signals[it][2] = getppid();
+		in_signals[it][3] = signum;
+		in_signals[it][4] = sigval.sival_int;
 	}
 }
 
-
-void do_posix_mode (int amount) {
-	fprintf(stdout, "Entering POSIX mode.\n");
+void mode_posix_f (int amount) {
+	fprintf(stdout, "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
+	fprintf(stdout, "POSIX mode ON.\n");
 
 	int i;
 
@@ -44,27 +34,26 @@ void do_posix_mode (int amount) {
 	memset(&act, 0, sizeof(act));
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_SIGINFO;
-	act.sa_sigaction = &sighandler_posix;
+	act.sa_sigaction = &posix_handle;
 
-	// set handlers to SIGCHLD
+	// SIGCHLD
 	if (0 > sigaction(SIGCHLD, &act, NULL)) {
-		trigger_syscall_error("sigaction");
+		system_call_error("sigaction");
 	}
 
-	// set handlers to all POSIX signals in
-	act.sa_sigaction = &sighandler_posix;
+	// POSIX signals
+	act.sa_sigaction = &posix_handle;
 	for (i = SIGRTMIN; i <= SIGRTMAX; i++) {
 		if (0 > sigaction(i, &act, NULL)) {
-			trigger_syscall_error("sigaction");
+			system_call_error("sigaction");
 		}
 	}
 
-	// fork current process
 	sigval_t sigval;
 	int child_pid = fork();
 
 	if (0 > child_pid) {
-		trigger_syscall_error("fork");
+		system_call_error("fork");
 
 	} else if ( 0 == child_pid )
 	{
@@ -72,46 +61,51 @@ void do_posix_mode (int amount) {
 			ppid = getppid();
 
 		// child process
-		fprintf(stdout, "I am child!\n");
+		fprintf(stdout, "Child is working...\n");
 
 		for (i = 0; i < amount; i++)
 		{
-			int randSignum = 0,
-				randValue = rand();
+			int rand_signum = 0,
+				rand_value = rand();
 
-			randSignum = rand_range(SIGRTMIN, SIGRTMAX);
+			rand_signum = rand() % (SIGRTMAX - SIGRTMIN + 1) + SIGRTMIN;
 
-			sent_signal_table[i][0] = i + 1;
-			sent_signal_table[i][1] = mypid;
-			sent_signal_table[i][2] = ppid;
-			sent_signal_table[i][3] = randSignum;
-			sent_signal_table[i][4] = randValue;
+			out_signals[i][0] = i + 1;
+			out_signals[i][1] = mypid;
+			out_signals[i][2] = ppid;
+			out_signals[i][3] = rand_signum;
+			out_signals[i][4] = rand_value;
 
-			sigval.sival_int = randValue;
+			sigval.sival_int = rand_value;
 
-			if (0 > sigqueue(ppid, randSignum, sigval)) {
-				trigger_syscall_error("sigqueue");
+			if (0 > sigqueue(ppid, rand_signum, sigval)) {
+				system_call_error("sigqueue");
 			}
 
 		}
 
-		// print sent signal table
+		// sended signal table
 		for (i = 0; i < amount; i++)
 		{
-			// 1|MYPID|PARENTPID|RANDOMPOSIXSIGNALSENTNO|RANDOMVALUE
-
-			fprintf(stdout, "%i | MYPID: %i | PARENTPID: %i | SENTSIGNAL: %i | VAL: %i\n",
-				sent_signal_table[i][0], sent_signal_table[i][1], sent_signal_table[i][2],
-				sent_signal_table[i][3], sent_signal_table[i][4]);
+			fprintf(stdout, "N=%i | MYPID=%i | PPID=%i | SIGNAL_No=%i | VALUE=%i\n", out_signals[i][0], out_signals[i][1], out_signals[i][2], out_signals[i][3], out_signals[i][4]);
 		}
 
 		sleep(1);
 
-		fprintf(stdout, "child end point.\n");
+		fprintf(stdout, "Child ending work.\n");
 		exit( EXIT_SUCCESS );
 	}
 
-	fprintf(stdout, "child exited, pid=%i\n", wait_child(child_pid));
+	while( 0 > wait() ){
+		if ( errno == EINTR ){
+			continue;
+		}
+		system_call_error("wait");
+	}
+
+	fprintf(stdout, "Child exited.\n");
+	fprintf(stdout, "POSIX mode succesfully completed the task.\n");
+	fprintf(stdout, "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 
 	exit( EXIT_SUCCESS );
 }

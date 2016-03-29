@@ -20,10 +20,10 @@ extern int errno;
 
 void system_call_error(const char *s);
 
-void mode_std();
-void mode_child();
-void mode_posix(int amount);
-void mode_kill(int signal, int pid);
-void mode_pipe();
+void mode_std_f();
+void mode_child_f();
+void mode_posix_f(int amount);
+void mode_kill_f(int signal, int pid);
+void mode_pipe_f();
 
 #endif

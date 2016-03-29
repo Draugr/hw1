@@ -1,15 +1,16 @@
 #include "funct.h"
 
-void do_kill_mode(int signal, int pid) {
-	fprintf(stdout, "Entering KILL mode.\n");
+void mode_kill_f(int signal, int pid) {
+	fprintf(stdout, "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
+	fprintf(stdout, "KILL mode ON.\n");
 
-	if ( 0 < signal)
+	if ( 0 < pid)
 	{
 		fprintf(stdout, "Signal %i will send to process with pid=%i.\n", signal, pid);
-	} else if ( 0 == signal )
+	} else if ( 0 == pid )
 	{
 		fprintf(stdout, "Signal %i will send to group of current process with pid=%i.\n", signal, getpid());
-	} else if ( -1 == signal )
+	} else if ( -1 == pid )
 	{
 		fprintf(stdout, "Signal %i will send to all processes of user of current process.\n", signal);
 	} else 
@@ -17,8 +18,11 @@ void do_kill_mode(int signal, int pid) {
 
 	if (0 > kill(pid, signal))
 	{
-		trigger_syscall_error("kill");
+		system_call_error("kill");
 	}
+
+	fprintf(stdout, "KILL mode succesfully complited the task.\n");
+	fprintf(stdout, "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 
 	exit( EXIT_SUCCESS );
 }

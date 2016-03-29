@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 		opt = getopt_long( argc, argv, "", long_opts, &opt_index );
 	}
 
-
+	fprintf(stdout, "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 	fprintf(stdout, "Current pid now is: %i\n", getpid());
 
 	srand(time(NULL));
