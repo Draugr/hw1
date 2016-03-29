@@ -3,6 +3,7 @@
 int out_signals[256][5];
 int in_signals[256][5];
 int in_signal_num = 0;
+int it = 0;
 
 void posix_handle(int signum, siginfo_t *siginfo, void *data) {
 	int i;
@@ -15,7 +16,7 @@ void posix_handle(int signum, siginfo_t *siginfo, void *data) {
 	} else {
 		sigval_t sigval = siginfo->si_value;
 
-		int it = in_signal_num++;
+		it = in_signal_num++;
 		in_signals[it][0] = in_signal_num;
 		in_signals[it][1] = getpid();
 		in_signals[it][2] = getppid();
