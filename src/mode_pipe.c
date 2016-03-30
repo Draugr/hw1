@@ -45,14 +45,15 @@ void mode_pipe_f() {
 		exit( EXIT_SUCCESS );
 	}
 
-	sleep(1);
+	wait(child_pid);
+	//sleep(1);
 
 	fprintf(stdout, "Writing...\n");
 	close(fds[0]);
 
 	write(fds[1], "Hello!", 6);
 
-	wait();
+	//wait(child_pid);
 
 	fprintf(stdout, "Child exited.\n");
 	fprintf(stdout, "PIPE mode succesfully completed the task.\n");
