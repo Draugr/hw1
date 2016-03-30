@@ -5,24 +5,24 @@ int in_signals[256][5];
 int in_signal_num = 0;
 int it = 0;
 
-void posix_handle(int signum, siginfo_t *siginfo, void *data) {
+void chld_handle(int signum, siginfo_t *siginfo, void *data){
 	int i;
-	
-	if ( signum == SIGCHLD ){
-		for (i = 0; i < in_signal_num; i++)
-		{
-			fprintf(stdout, "N=%i | MYPID=%i | PPID=%i | SIGNAL No=%i | VALUE=%i\n", in_signals[i][0], in_signals[i][1], in_signals[i][2], in_signals[i][3], in_signals[i][4]);
-		}
-	} else {
-		sigval_t sigval = siginfo->si_value;
 
-		it = in_signal_num++;
-		in_signals[it][0] = in_signal_num;
-		in_signals[it][1] = getpid();
-		in_signals[it][2] = getppid();
-		in_signals[it][3] = signum;
-		in_signals[it][4] = sigval.sival_int;
+	for (i = 0; i < in_signal_num; i++)
+	{
+		fprintf(stdout, "N=%i | MYPID=%i | PPID=%i | SIGNAL No=%i | VALUE=%i\n", in_signals[i][0], in_signals[i][1], in_signals[i][2], in_signals[i][3], in_signals[i][4]);
 	}
+}
+
+void posix_handle(int signum, siginfo_t *siginfo, void *data){
+	sigval_t sigval = siginfo->si_value;
+
+	it = in_signal_num++;
+	in_signals[it][0] = in_signal_num;
+	in_signals[it][1] = getpid();
+	in_signals[it][2] = getppid();
+	in_signals[it][3] = signum;
+	in_signals[it][4] = sigval.sival_int;
 }
 
 void mode_posix_f (int amount) {
@@ -35,9 +35,9 @@ void mode_posix_f (int amount) {
 	memset(&act, 0, sizeof(act));
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_SIGINFO;
-	act.sa_sigaction = &posix_handle;
 
 	// SIGCHLD
+	act.sa_sigaction = &chld_handle;
 	if (0 > sigaction(SIGCHLD, &act, NULL)) {
 		system_call_error("sigaction");
 	}
@@ -96,8 +96,8 @@ void mode_posix_f (int amount) {
 		fprintf(stdout, "Child ending work.\n");
 		exit( EXIT_SUCCESS );
 	}
-
-	while( 0 > wait() ){
+	int status;
+	while( 0 > wait(&status) ){
 		if ( errno == EINTR ){
 			continue;
 		}
