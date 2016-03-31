@@ -53,7 +53,7 @@ void mode_pipe_f() {
 
 	write(fds[1], "Hello!", 6);
 
-	//wait(child_pid);
+	//wait();
 
 	fprintf(stdout, "Child exited.\n");
 	fprintf(stdout, "PIPE mode succesfully completed the task.\n");

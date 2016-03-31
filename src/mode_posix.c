@@ -17,12 +17,12 @@ void chld_handle(int signum, siginfo_t *siginfo, void *data){
 void posix_handle(int signum, siginfo_t *siginfo, void *data){
 	sigval_t sigval = siginfo->si_value;
 
-	it = in_signal_num++;
-	in_signals[it][0] = in_signal_num;
-	in_signals[it][1] = getpid();
-	in_signals[it][2] = getppid();
-	in_signals[it][3] = signum;
-	in_signals[it][4] = sigval.sival_int;
+	in_signals[in_signal_num][0] = in_signal_num + 1;
+	in_signals[in_signal_num][1] = getpid();
+	in_signals[in_signal_num][2] = getppid();
+	in_signals[in_signal_num][3] = signum;
+	in_signals[in_signal_num][4] = sigval.sival_int;
+	in_signal_num++;
 }
 
 void mode_posix_f (int amount) {
